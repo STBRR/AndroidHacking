@@ -69,7 +69,31 @@ startActivity(browserIntent);
 The above code example declares our 'Intention' (Intent) to 'View' (ACTION_VIEW) to the URL: 'https://hextree.io'
 If we hand over this Intent object to the Android Operating System, It will figure out which app can handle this. This means that intents can be used to interact with other apps.
 
+- Our Intention to view the URL automatically loads up Google Chrome but how does the Android Operating system know this?
+- This again comes down to `AndroidManifest.xml`
 
+
+```xml
+<activity-alias android:name="com.google.android.apps.chrome.Main"
+            android:targetActivity="org.chromium.chrome.browser.document.ChromeLauncherActivity"
+            android:exported="true">
+			...
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                {% if channel in ['stable', 'default'] %}<data android:scheme="googlechrome" />{% endif %}
+                <data android:scheme="http" />
+                <data android:scheme="https" />
+                <data android:scheme="about" />
+                <data android:scheme="javascript" />
+            </intent-filter>
+			...
+</activity-alias>
+```
+
+Here we can see that in the `AndroidManifest.xml` within Google Chrome. There is an activity-alias with an intent-filter for `android.intent.action.VIEW` along with a set of schemas.
+The Android Operating system will automatically search all applications to see if the conditions of our intention match, If so. The application will launch. Displaying our URL.
 
 
 
