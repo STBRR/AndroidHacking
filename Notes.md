@@ -95,8 +95,56 @@ If we hand over this Intent object to the Android Operating System, It will figu
 Here we can see that in the `AndroidManifest.xml` within Google Chrome. There is an activity-alias with an intent-filter for `android.intent.action.VIEW` along with a set of schemas.
 The Android Operating system will automatically search all applications to see if the conditions of our intention match, If so. The application will launch. Displaying our URL.
 
+### Hacking Apps with Intents
 
+In order to hack a target we need to be able to interact with it.
 
+- We want to send malicious input to apps.
+- Android Intents are the malicious input that we can send to other apps.
+
+## Receiving Intents
+
+- In order for an application to receive Intents the Activity would need to be 'Exposed'. This is done from within the `AndroidManifest.xml`
+- Be sure to check for Exposed/Exported activity when reverse engineering target applications.
+- If an activity has been Exported. This means that it is callable and we could interact with it.
+
+Example:
+
+```xml
+        <activity
+            android:name=".SecretActivity"
+            android:exported="true" >
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <data android:mimeType="text/plain" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+```
+
+For us to be able to receive this intent. We write the following code that will call `getIntent()` and specify the type of `EXTRA_TEXT`.
+This is essentially providing functionality to our application so that we can share text to it and whatever text is passed to it from another application will
+be displayed in this activity and also logged with LogCat.
+
+```java
+public class SecretActivity extends AppCompatActivity {
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_secret);
+
+        Intent receivedIntent = getIntent();
+        String sharedText = receivedIntent.getStringExtra(Intent.EXTRA_TEXT);
+
+        if(sharedText != null) {
+            TextView debugText = findViewById(R.id.debug_text);
+            debugText.setText(String.format("Shared: %s", sharedText));
+            Log.i("SharedText", sharedText);
+        }
+    }
+}
+```
 
 
 
