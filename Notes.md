@@ -113,7 +113,7 @@ Example:
 ```xml
         <activity
             android:name=".SecretActivity"
-            android:exported="true" >
+            ==android:exported="true" >==
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <data android:mimeType="text/plain" />
