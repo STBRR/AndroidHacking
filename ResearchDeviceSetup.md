@@ -87,7 +87,8 @@ Within Android Studio. It is possible to browse the file system of the device in
 - List only third party Packages: `adb shell pm list packages -3`
 - Clear the application data without removing the application: `adb shell pm clear <package_name>`
 - List Information such as activities and permissions of a package: `adb shell dumpsys package <package_name>`
-- Manually starts the Activity of a specified package: `adb shell am start <package_name>/<activity_name>`
+- Manually starts the Activity of a specified package: `adb shell am start -n <package_name>/<activity_name>`
 - Uninstalls the specified application: `adb uninstall <package_name>`
 
 More information for `pm` can be found [here](https://developer.android.com/tools/adb#pm)
+More information for `am` can be found [here](https://developer.android.com/tools/adb#am)
