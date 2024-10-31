@@ -126,6 +126,12 @@ For us to be able to receive this intent. We write the following code that will 
 This is essentially providing functionality to our application so that we can share text to it and whatever text is passed to it from another application will
 be displayed in this activity and also logged with LogCat.
 
+- Why would an application send an intent to us?
+
+Because in our `AndroidManifest.xml` document. We specified the category within our Activity as `android.intent.category.DEFAULT` meaning that our Proof of Concept
+application will show in the list of Applications when we highlight some text and choose the 'Share' option. 
+With `android.intent.action.SEND` we tell the Android OS that our application can be used to handle text sharing.
+
 ```java
 public class SecretActivity extends AppCompatActivity {
 
@@ -145,6 +151,63 @@ public class SecretActivity extends AppCompatActivity {
     }
 }
 ```
+
+If this Activty handles the intent badly, we could have a vulnerability?. Be sure to think abut how applications handle Intents coming from other applications and their input.
+
+## Decompiling Our Application
+
+- Android applications using decompiled using a tool called [JADX](https://github.com/skylot/jadx)
+- JADX is a powerful tool that can allow us to recover the source code, make changes and help us in the process of patching applications for further analysis
+- We can build our application using 'Build' -> 'Build Bundle(s) / APK(s) -> 'Build APK(s)
+- Signed Bundles for the Play Store compile into an `.aab` rather than a standard `.apk`
+- Once the application has been built. This can be dragged into the JADX UI and the decompilation process will start
+
+
+The first point of interest during the decompilation process will be the `AndroidManifest.xml` file. This gives us a general overview of the application including:
+- Activies
+- Permissions
+- Intent Filters
+- Resourse Locations - `strings.xml` etc..
+
+This is the very first step and introduction into reverse engineering Android Applications.
+
+
+## Debugging with Android Studio
+
+- When creating Android Applications, especially when more complex steps are involved. It makes sense to learn about tools for proper debugging.
+- Android Studio debugger is a great first step and can help a lot.
+- When debugging you can set breakpoints and then launch the Application in 'Debug' mode for this to take effect.
+
+Once a breakpoint has been hit within Android Studio. We have access to all of the debugging tools such as:
+
+- Stop Debugging (F2)
+- Step Over (F8)
+- Step Into (F7) - _Allows us to dive into a function call and follow the code path_
+- Step Out (SHIFT + F8) - _Allows us to step out of a function that we have stepped into and go back to the original code path_
+- Mute Breakpoints - _Ignore any breakpoints temporarily_
+
+When debugging we can alter variable values and tweak other values within the applications memory. This can be useful when troubleshooting issues.
+
+## Sharing App Code via. Git
+
+- Android Studio has integrated support for Git, so we can easily manage our project and upload our code to sites such as GitHub or GitLab
+- We can also import Git projects directly into Android Studio for easy debugging.
+- To import a project: File -> New -> Project from Version Control -> URL to Project
+
+It may take some time for the project to be imported into Android Studio and the environment set up. Gradle will build the application and pull any dependencies that are required.
+
+Challenge URL: https://github.com/hextreeio/android-challenge1
+Challenge Question: _Setup the repository in Android Studio and find the hidden flag_
+
+
+
+
+
+
+
+
+
+
 
 
 
