@@ -1,4 +1,4 @@
-# HexTree.io Android Notes
+# HexTree.io | Your First Android App
 
 # Android Studio
 
