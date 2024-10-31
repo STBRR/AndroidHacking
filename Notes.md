@@ -110,10 +110,10 @@ In order to hack a target we need to be able to interact with it.
 
 Example:
 
-```xml
+```xml #3,5-7
         <activity
             android:name=".SecretActivity"
-            ==android:exported="true" >==
+            android:exported="true" >
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <data android:mimeType="text/plain" />
