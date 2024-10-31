@@ -61,6 +61,13 @@
 - Intents can be used to interact with other apps, which makes them one of the most important attack surfaces
 - An 'Activity' is a single, focused thing that the user can do. Almost all activites interact with the user.
 
+```java
+Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://hextree.io/"));
+startActivity(browserIntent);
+```
+
+The above code example declares our 'Intention' (Intent) to 'View' (ACTION_VIEW) to the URL: 'https://hextree.io'
+If we hand over this Intent object to the Android Operating System, It will figure out which app can handle this. This means that intents can be used to interact with other apps.
 
 
 
