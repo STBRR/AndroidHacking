@@ -73,7 +73,7 @@ An entire directory can be pulled off the device by specifying the directory in 
 
 ```
 adb pull /sdcard/Downloads
-``
+```
 
 ## Android Device Explorer
 
