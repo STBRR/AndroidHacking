@@ -90,5 +90,5 @@ Within Android Studio. It is possible to browse the file system of the device in
 - Manually starts the Activity of a specified package: `adb shell am start -n <package_name>/<activity_name>`
 - Uninstalls the specified application: `adb uninstall <package_name>`
 
-More information for `pm` can be found [here](https://developer.android.com/tools/adb#pm)
-More information for `am` can be found [here](https://developer.android.com/tools/adb#am)
+- More information for `pm` can be found [here](https://developer.android.com/tools/adb#pm)
+- More information for `am` can be found [here](https://developer.android.com/tools/adb#am)
