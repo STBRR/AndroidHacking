@@ -194,9 +194,10 @@ When debugging we can alter variable values and tweak other values within the ap
 - We can also import Git projects directly into Android Studio for easy debugging.
 - To import a project: File -> New -> Project from Version Control -> URL to Project
 
-It may take some time for the project to be imported into Android Studio and the environment set up. Gradle will build the application and pull any dependencies that are required.
+It may take some time for the project to be imported into Android Studio and the environment set up. Gradle will build the application and pull any dependencies that are required.n
 
 Challenge URL: https://github.com/hextreeio/android-challenge1
+
 Challenge Question: _Setup the repository in Android Studio and find the hidden flag_
 
 
