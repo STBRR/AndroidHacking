@@ -183,3 +183,51 @@ Our APK is now signed so we _should_ be good to install this onto our mobile dev
 	- Run the following: `[...]/build-tools/34.0.0/zipalign -p -f -v 4 ./dist/<apktool_build>.apk aligned.apk`
 	- Run the following: `[...]/build-tools/34.0.0/apksigner sign --ks ./research.keystore ./aligned.apk`
 
+# Decompiling Android Applications
+
+## Introduction to Decompiling
+
+Because of features such as reflection. Java applications generally retain all their symbols.
+
+Also because the Dalvik bytecode is relatively high-level, it contains a lot of information on the structure and control
+flow of classes. This means that we can get a very good results when decompiling Android applications.
+
+However for this reason it is also very popular for developers to **obfuscate** Android applications, so you will often see
+obfuscated apps in the wild.
+
+## Installing JADX
+
+This can be installed via. the GitHub [repo](https://github.com/skylot/jadx?tab=readme-ov-file#download)
+
+## Getting started with JADX
+
+We'll mainly use the `jadx-gui` which can directly import APKs so that we do **not** need to extract the APK with `apktool` first.
+
+JADX directly decompiles into Java and makes navigation through the application very easy. To find the entry-point into
+an application we can double-click the class in the `AndroidManifest.xml` to follow its declaration.
+
+### Challenge
+
+- Challenge Question: _Can you find the first password required to unlock the application?_
+- Challenge Solution:
+	1. Open the `.apk` in `jadx-gui`
+	2. View `AndroidManifest.xml`
+	3. Examine the code in `MainActivity`
+
+## Resolving String Resources
+
+Strings in Android applications are often not hard-coded, but instead packed into resources. When reviewing if you see code
+such as `R.id` or `R.string` it means that a resource is loaded from the resource directory or the `resources.asrc` file
+
+The best way to find the resource is by using the powerful global search of JADX.
+
+## JNI - Java Native Interface
+
+Some Android applications will use functions implemented in native shared objects. You can identify calls into such functions by
+the keyword `native`.
+
+This functionality is called JNI - _Java Native Interface_. JADX does not let us decompilee shared objects, instead we need
+to use other reverse engineering tools such as Binary Ninja or Ghidra. Command line utilities such as `strings` can also reveal
+information on the shared object.
+
+## Saving JADX Projects & Working with the CLI
