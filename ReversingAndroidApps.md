@@ -417,4 +417,136 @@ X-Api-Key: HXT{REDACTED}
 User-Agent: HextreeForecastUSA/v4.x
 ```
 
+##  Defeating JNI Obfuscation
 
+Developers will sometimes want to include native libarires into their code to provide additional functionality to their applications but also develop their own
+for potentially storing sensitive information. These libraries are included as part of the APK and can be reverse engineered using tools like Binary Ninja and Ghidra.
+
+The APK for this exercise can be found [here](https://storage.googleapis.com/hextree_prod_image_uploads/media/uploads/reverse-android-apps/io.hextree.weatherusa_update1.apk)
+
+Our research objective here is to reverse engineer the 'updated' version of the Weather application and find the value of the API Key - _aka Flag_
+
+We can load this application into `jadx-gui` and review the source code. It is evident that changes have been made as there is no longer a hardcoded API Key.
+
+```java
+public abstract class InternetUtil {
+    public static String a(String str, String str2) {
+        System.loadLibrary("native-lib");
+        String str3 = "";
+        HttpURLConnection httpURLConnection = null;
+        try {
+            try {
+                HttpURLConnection httpURLConnection2 = (HttpURLConnection) new URL(str).openConnection();
+                try {
+                    httpURLConnection2.setRequestMethod("GET");
+                    httpURLConnection2.setReadTimeout(15000);
+                    httpURLConnection2.setConnectTimeout(15000);
+                    if (!TextUtils.isEmpty(str2)) {
+                        httpURLConnection2.setRequestProperty("User-Agent", str2);
+                    }
+                    httpURLConnection2.setRequestProperty("X-API-KEY", getKey("moiba1cybar8smart4sheriff4securi"));
+                    int responseCode = httpURLConnection2.getResponseCode();
+                    if (responseCode == 200) {
+                        str3 = m.d(httpURLConnection2.getInputStream());
+                    } else {
+                        Log.e("HXT", "API Error: " + responseCode);
+                    }
+                    httpURLConnection2.disconnect();
+                } catch (IOException e2) {
+                    e = e2;
+                    httpURLConnection = httpURLConnection2;
+                    Log.e("HXT", "API Error", e);
+                    if (httpURLConnection != null) {
+                        httpURLConnection.disconnect();
+                    }
+                    return str3;
+                } catch (Throwable th) {
+                    th = th;
+                    httpURLConnection = httpURLConnection2;
+                    if (httpURLConnection != null) {
+                        httpURLConnection.disconnect();
+                    }
+                    throw th;
+                }
+            } catch (Throwable th2) {
+                th = th2;
+            }
+        } catch (IOException e3) {
+            e = e3;
+        }
+        return str3;
+    }
+
+    private static native String getKey(String str);
+}
+```
+
+There are some intersting things to note in this `InternetUtil` class:
+
+1. The code appears to be loading an external library called `native-lib`
+2. The value of the `X-API-KEY` value is the value of `getKey("moiba1cybar8smart4sheriff4securi");`
+	- But what is this `getKey()` function?
+3. There is a private `native` function declared at the bottom that expects a string as an integer.
+
+Within APKs libraries are stored within `lib/` and there will be a library for each device architecture, x86_64, x84, aarm etc..
+
+Rather than attempt to reverse engineer the native library. Why don't we include this library into our own application and call the `getKey()` function with the same value
+
+### Using the Library in our own Application.
+
+As we previously created a clicker app. This can be a great start for implementing our library. We can 'Save' all of the decompiled data from `jadx-gui` into a directory
+of our choice and from there we will be able to copy the libraries into our own Android Studio project.
+
+Switching to Project View inside of Android Studio we can create a new directory called `jniLibs` inside of `app/src/main/` and copy all of the directories within `libs/` there.
+
+Our `jniLibs/` directory should have the following structure:
+
+- `jniLibs/x86/`
+- `jniLibs/x86_64/`
+- `jniLibs/arm64-v8a`
+- `jniLibs/armeabi-v7a`
+
+All we need to do now is create a new class inside of our Project that matches the class path that the library expects.
+
+```
+$ strings libnative-lib.so
+...
+Java_io_hextree_weatherusa_InternetUtil_getKey
+...
+```
+
+Right so now we've obtained the class path we can add a new Class inside of our Android Project and give it the name `io.hextree.weatherusa.InternetUtil`
+Inside of this class we can declare a function called `getKey()` with `private static native String getKey(String str);` but also write our own solve function.
+
+Below is the full code for our `InternetUtil` class:
+
+```java
+package io.hextree.weatherusa;
+
+public class InternetUtil {
+    private static native String getKey(String str);
+
+    public static String solve() {
+        System.loadLibrary("native-lib");
+        return getKey("moiba1cybar8smart4sheriff4securi");
+    }
+}
+```
+
+Pretty simple right? When this function is called. It will return the value of the `getKey()` call.
+
+Back in our MainActivity class that we created at the start during our clicker app. We can replace the `onCreate()` code with the following:
+
+```java
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        TextView homeText = findViewById(R.id.home_text);
+        homeText.setText("Flag: " + InternetUtil.solve());
+
+    }
+```
+
+Finally. We can launch our application and the flag will be displayed.
