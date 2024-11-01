@@ -112,12 +112,12 @@ adb logcat "MainActivity:V *:S"
 
 Log Serverities:
 
-- `V` -> Verbose
-- `D` -> Debug
-- `I` -> Info
-- `W` -> Warning
-- `E` -> Error
-- `F` -> Fatal
-- `S` -> Silent
+- **V**erbose
+- **D**ebug
+- **I**nfo
+- **W**arning
+- **E**rror
+- **F**atal
+- **S**ilent
 
 
