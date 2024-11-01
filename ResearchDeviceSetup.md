@@ -92,3 +92,32 @@ Within Android Studio. It is possible to browse the file system of the device in
 
 - More information for `pm` can be found [here](https://developer.android.com/tools/adb#pm)
 - More information for `am` can be found [here](https://developer.android.com/tools/adb#am)
+
+
+## ADB Logcat
+
+- Android Logging Feature.
+- Can be executed with `adb logcat -v <log_format>` or `adb logcat brief -v <log_format>` for a more condensed version of the log.
+- LogCat can be accessed directy from within Android Studio during application runtime and/or debugging.
+
+### Log Filtering
+
+We can filter down the logs to only display relevant information to us.
+
+Here we can filter for **only** Verbose messages from the 'tag' MainActivity and ensure that all other tags are ignored.
+
+```
+adb logcat "MainActivity:V *:S"
+```
+
+Log Serverities:
+
+- `V` -> Verbose
+- `D` -> Debug
+- `I` -> Info
+- `W` -> Warning
+- `E` -> Error
+- `F` -> Fatal
+- `S` -> Silent
+
+
