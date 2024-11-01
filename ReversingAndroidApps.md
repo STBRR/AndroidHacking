@@ -254,6 +254,167 @@ When doing reverse engineering it is important to define clear research goals to
 - Define your goals for what you want to achieve - In this case:
 	- _Where is the data being pulled from?_
 	- _What is the purpose of the application?_
+- This is not security releated. Just a goal to acheive to start the process.
 
 > **Focus on your goal, not the code**. If you know you are looking for a specific functionality it is often best to 
 search for that functionality instead of trying to understand the overall code and structure of the application.
+
+## The HexTree Weather App
+
+Our objective here is to reverse engineer the custom weather application developed by Hextree on our own.
+By keeping our research goals in mind let's try to discover the following:
+
+The APK for the application can be downloaded from [here](https://storage.googleapis.com/hextree_prod_image_uploads/media/uploads/reverse-android-apps/io.hextree.weatherusa.apk)
+
+- What is the Custom API?
+- What is the Authentication Method?
+- Why are the weather updates disabled?
+
+### What is the Custom API?
+
+Upon loading the application into JADX we can see that there are **only** two activites.
+- `io.hextree.weatherusa.MainActivity`
+- `io.hextree.weatherusa.LocationActivity`
+
+When reviewing the `LocationActivity` code. It's fairly obfuscated and a bit hard to read. Let's focus more on our goal
+and use the JADX search engine to search for `http` and `https` within the codebase.
+
+Searching for `https://` gives us a result in `b.run()`
+
+```java
+    @Override // java.lang.Thread, java.lang.Runnable
+    public void run() {
+        StringBuilder sb;
+        String b2;
+        String str = "https://ht-api-mocks-lcfc4kr5oa-uc.a.run.app/xml/SOAP_server/ndfdXMLclient.php";
+        if (this.f450a != null) {
+            sb = new StringBuilder();
+            sb.append("https://ht-api-mocks-lcfc4kr5oa-uc.a.run.app/xml/SOAP_server/ndfdXMLclient.php");
+            b2 = a(this.f450a);
+        } else {
+            if (this.f451b != null) {
+                sb = new StringBuilder();
+                sb.append("https://ht-api-mocks-lcfc4kr5oa-uc.a.run.app/xml/SOAP_server/ndfdXMLclient.php");
+                b2 = b(this.f451b);
+            }
+            d(d.a(str, "HextreeForecastUSA/v4.x", this.f452c.getString(R.string.ApiKey)));
+        }
+        sb.append(b2);
+        str = sb.toString();
+        d(d.a(str, "HextreeForecastUSA/v4.x", this.f452c.getString(R.string.ApiKey)));
+    }
+```
+
+From this code snipped we can see the API endpoint for the application along with a function call to `d.a()`
+that has the following code:
+
+```java
+public static String a(String str, String str2, String str3) {
+        String str4 = "";
+        HttpURLConnection httpURLConnection = null;
+        try {
+            try {
+                HttpURLConnection httpURLConnection2 = (HttpURLConnection) new URL(str).openConnection();
+                try {
+                    httpURLConnection2.setRequestMethod("GET");
+                    httpURLConnection2.setReadTimeout(15000);
+                    httpURLConnection2.setConnectTimeout(15000);
+                    if (!TextUtils.isEmpty(str2)) {
+                        httpURLConnection2.setRequestProperty("User-Agent", str2);
+                    }
+                    httpURLConnection2.setRequestProperty("X-API-KEY", str3);
+                    int responseCode = httpURLConnection2.getResponseCode();
+                    if (responseCode == 200) {
+                        str4 = n.d(httpURLConnection2.getInputStream());
+                    } else {
+                        Log.e("HXT", "API Error: " + responseCode);
+                    }
+                    httpURLConnection2.disconnect();
+                } catch (IOException e2) {
+                    e = e2;
+                    httpURLConnection = httpURLConnection2;
+                    Log.e("HXT", "API Error", e);
+                    if (httpURLConnection != null) {
+                        httpURLConnection.disconnect();
+                    }
+                    return str4;
+                } catch (Throwable th) {
+                    th = th;
+                    httpURLConnection = httpURLConnection2;
+                    if (httpURLConnection != null) {
+                        httpURLConnection.disconnect();
+                    }
+                    throw th;
+                }
+            } catch (Throwable th2) {
+                th = th2;
+            }
+        } catch (IOException e3) {
+            e = e3;
+        }
+        return str4;
+    }
+```
+
+## What is the Authentication Method?
+
+This function takes 3 arguments: `str`, `str2` and `str3` looking back at the function call within `b.run()`
+
+```java
+d.a(str, "HextreeForecastUSA/v4.x", this.f452c.getString(R.string.ApiKey))
+```
+
+We can determine that the arguments are:
+
+- `str` : URL
+- `str2` : User-Agent
+- `str3` : API-Key
+
+Where the API-Key is included as part of the HTTP Headers in `X-API-Key`
+
+Searching more around the application we can check resource strings and uncover the API key that is used to authenticate along
+with the User-Agent that is required to access the endpoint.
+
+This leaves us with one remaining goal.
+
+## Why are the weather updates disabled?
+
+Installing the application on our device with `adb` and launching it prompts us for a ZIP code that needs to be 5 digits in length.
+If we inspect this functionality in `jadx-gui` doesn't really give us much so if we enter a bogus ZIP Code and see what happens?
+
+Entering `12345` gives us a message stating 'Weather Updates Disabled'. Searching for this string in JADX reveals the following
+code snippet:
+
+```java
+    private void s() {
+        p(false);
+        boolean c2 = m.c(this);
+        String b2 = m.b(this);
+        if (!b2.equals("13337") && !b2.equals("42")) {
+            Toast.makeText(this, "Weather Updates Disabled", 0).show();
+            return;
+        }
+        if (c2) {
+            this.f1276b.i(this.f1275a.b());
+        } else if (b2.length() == 5) {
+            this.f1276b.j(b2);
+        }
+    }
+```
+
+So there's a check where the ZIP code we provide needs to be either `13337` or `42`. There is no way of us entering `42`
+as the length needs to be 5.
+
+We can review the code more and manually craft a request using `curl` and proxying this to Burp Suite for easier editing.
+
+The final request that reveals the flag is:
+
+```
+GET /xml/SOAP_server/ndfdXMLclient.php?whichClient=NDFDgen&product=time-series&maxt=maxt&mint=mint&dew=dew&appt=appt&wx=wx&icons=icons&wwa=wwa&flag=flag&Submit=Submit&begin=1990-01-18T20:04&zipCodeList=42 HTTP/2
+Host: ht-api-mocks-lcfc4kr5oa-uc.a.run.app
+Accept: */*
+X-Api-Key: HXT{REDACTED}
+User-Agent: HextreeForecastUSA/v4.x
+```
+
+
