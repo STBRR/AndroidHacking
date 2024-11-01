@@ -1,4 +1,4 @@
-# Hextree.io | Research Device & Emulator Setup
+# HexTree.io | Research Device & Emulator Setup
 
 # Physical Device
 
@@ -121,3 +121,9 @@ Log Serverities:
 - **S**ilent
 
 
+### Challenge
+
+- Challenge Question: _Can you find the flag in the log message?_
+- Challenge Solution:
+	1. Execute `adb logcat "MainActivity:V *:S"
+	2. Launch the application and the flag will be shown in the logcat output
