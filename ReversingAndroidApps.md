@@ -231,3 +231,29 @@ to use other reverse engineering tools such as Binary Ninja or Ghidra. Command l
 information on the shared object.
 
 ## Saving JADX Projects & Working with the CLI
+
+- JADX projects are saved as `.jadx` file format which contains all of the decompiled sources.
+- Great for collaborating as everything is saved in a single file and can be sent to another researcher.
+- You can also save all of the decompiled sources to a folder to work with other tools.
+- JADX provides exporting the project as a Gradle Project so that you can import this into Android Stuido
+
+JADX also has a powerful CLI that can be used to decompile APKs headless. All documentation for the JADX CLI
+can be found [here](https://github.com/skylot/jadx?tab=readme-ov-file#usage)
+
+# Case Study: A Weather App
+
+- A nice, small set of hacking challenges compiled into a single application.
+- Let's practice everything that has been learned so far by reversing an example application.
+- The APK in-scope for this segment can be found [here](https://storage.googleapis.com/hextree_prod_image_uploads/media/uploads/reverse-android-apps/biz.binarysolutions.weatherusa.apk)
+
+## Define Research Goals
+
+When doing reverse engineering it is important to define clear research goals to prevent getting lost when exploring.
+
+- Why are you reverse engineer?
+- Define your goals for what you want to achieve - In this case:
+	- _Where is the data being pulled from?_
+	- _What is the purpose of the application?_
+
+> **Focus on your goal, not the code**. If you know you are looking for a specific functionality it is often best to 
+search for that functionality instead of trying to understand the overall code and structure of the application.
