@@ -329,3 +329,181 @@ Java.perform(() => {
 ```
 
 Here we override the implementation of the `Fragment.onStart()` method to console. 
+
+# Tracing with Frida
+
+## Frida-Trace
+
+- `frida-trace` allows us to directly trace function calls within Applications
+- This needs to instrument each function so we need to tell Frida which functions we are interested in.
+
+We can tell Frida which functions we want to trace with the following syntax:
+
+```
+classname!methodname
+```
+
+Frida supports Wildcars so we can use the following to match all methods in all classes within the application.
+
+```
+io.hextree.*!*
+```
+
+This in action would look like
+
+```
+$ frida-trace -U -j 'io.hextree.*!*' FridaTarget
+```
+
+With the command we can see that it will start tracing X amount of functions. Even though we navigate around the 
+app, some functions will not be traced. This is because the functions were not loaded when we initiated `frida-trace`. By exiting Frida and re-running the command. We'll be able to trace more functions and see what happens.
+
+Within the 'Tracing' fragment. If we click a button with `frida-trace` open we can get the following output in our console.
+
+```
+  3323 ms  TraceButtonFragment$1.onClick("<instance: android.view.View, $className: com.google.android.material.button.MaterialButton>")
+  3323 ms     | TraceButtonFragment.button_handler_6()
+  3324 ms     |    | FlagCryptor.decodeFlag("VUtHe1YtZ254ci1xYmJlLTZ9")
+  3324 ms     |    |    | FlagCryptor.decode("VUtHe1YtZ254ci1xYmJlLTZ9")
+  3324 ms     |    |    | <= "UKG{V-gnxr-qbbe-6}"
+  3324 ms     |    |    | FlagCryptor.rot13("UKG{V-gnxr-qbbe-6}")
+  3324 ms     |    |    | <= "HXT{REDACTED}"
+  3324 ms     |    | <= "HXT{REDACTED}"
+```
+
+This is very useful for when we want to trace a function to see what a button does within an application.
+
+`frida-trace` also allows us to exclude certain classes and methods with the same syntax. Here is an example
+with using the `-J` flag.
+
+```
+$ frida-trace -U -j 'io.hextree.*!*' -J '*AnnoyingClass*!*' FridaTarget
+```
+
+```
+  1832 ms  TraceButtonFragment$2.onClick("<instance: android.view.View, $className: com.google.android.material.button.MaterialButton>")
+  1832 ms     | TraceButtonFragment.button_handler_5()
+  1833 ms     |    | FlagCryptor.decodeFlag("VUtHe1YtZ254ci1xYmJlLTV9")
+  1833 ms     |    |    | FlagCryptor.decode("VUtHe1YtZ254ci1xYmJlLTV9")
+  1833 ms     |    |    | <= "UKG{V-gnxr-qbbe-5}"
+  1833 ms     |    |    | FlagCryptor.rot13("UKG{V-gnxr-qbbe-5}")
+  1833 ms     |    |    | <= "HXT{REDACTED}"
+  1833 ms     |    | <= "HXT{REDACTED}
+```
+## Tracing into JNI
+
+- `frida-trace` allows us to trace into native objects by specifying the `-I` option.
+
+This _can_ take some time as Frida will have to instrument all of the methods that are inside of the native library.
+
+
+Example
+
+```
+$ frida-trace -U -I 'libhextree.so' -j 'io.hextree.*!*' FridaTarget
+```
+
+```
+Started tracing 304 functions. Press Ctrl+C to stop. 
+```
+
+```
+135523 ms  TraceButtonFragment$4.onClick("<instance: android.view.View, $className: com.google.android.material.button.MaterialButton>")
+135524 ms     | TraceButtonFragment.native_call()
+135524 ms     |    | NativeLib.$init()
+135524 ms     |    | NativeLib.stringFromJNI()
+135525 ms     |    |    | Java_io_hextree_NativeLib_stringFromJNI()
+135525 ms     |    |    |    | _ZNSt6__ndk112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEC2IDnEEPKc()
+135525 ms     |    |    |    |    | _ZNSt6__ndk117__compressed_pairINS_12basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEE5__repES5_EC2INS_18__default_init_tagESA_EEOT_OT0_()
+135525 ms     |    |    |    |    | _ZNSt6__ndk111char_traitsIcE6lengthEPKc()
+135525 ms     |    |    |    |    | _ZNSt6__ndk112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEE6__initEPKcm()
+135525 ms     |    |    |    |    |    | _Znwm()
+135525 ms     |    |    |    | _ZN7_JNIEnv12NewStringUTFEPKc()
+135525 ms     |    |    |    | _ZNSt6__ndk112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEED1Ev()
+135525 ms     |    |    |    |    | _ZdlPv()
+135525 ms     |    | <= "HXT{REDACTED}"
+135525 ms     | <= "HXT{REDACTED}"
+```
+
+## Frida Interception Basics
+
+As we briefly covered previously. Frida can be used to override the implementation of methods and modify return values. This technique is commonly used to bypass SSL pinning in applications.
+
+By using `Java.perform()` we can create an instance of a class and bypass the interception of return values for 
+called methods.
+
+In this case our target [APK](https://storage.googleapis.com/hextree_prod_image_uploads/media/uploads/android-dynamic-instrumentation/FridaTarget.apk) has a Fragment for testing such cases.
+
+```javascript
+Java.perform(() => {
+    var InterceptionFragment = Java.use("io.hextree.fridatarget.ui.InterceptionFragment");
+    InterceptionFragment.function_to_intercept.implementation = function(argument) {
+        console.log("Function called with:", argument)
+        this.function_to_intercept(argument);
+        return "pwnage";
+    }
+})
+```
+
+We change the `.implementation` of the method and change the return value to anything we choose.
+
+There are two License Key checks that need to be solved for this part of the module and these can be found below.
+
+### License Check 1
+
+We can recover the source code via. `jadx-gui` and rewrite the implementation in a Frida script.
+
+
+```java
+public static boolean isLicenseValid() {
+    return false;
+}
+```
+
+```javascript
+Java.perform(()=> {
+    let LicenseManager = Java.use("io.hextree.fridatarget.LicenseManager");
+    LicenseManager.isLicenseValid.implementation = function() {
+        console.log("Function has been called.")
+        return true;
+    }
+})
+
+console.log("License Check Bypass #1 Script Loaded.")
+```
+
+### License Check 2
+
+```java
+public static void isLicenseStillValid(Context context, long unixTimestamp) {
+    AlertDialog.Builder builder = new AlertDialog.Builder(context);
+    if (unixTimestamp > 1672531261) {
+        Log.d("LicenseManager", "The license expired on 01.01.2023.");
+        builder.setMessage("License expired.");
+    } else {
+        builder.setMessage(FlagCryptor.decode("REDACTED"));
+    }
+    builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+        @Override
+        public void onClick(DialogInterface dialog, int id) {
+        }
+    });
+    AlertDialog dialog = builder.create();
+    dialog.show();
+}
+```
+
+```javascript
+Java.perform(() => {
+    let LicenseManager = Java.use("io.hextree.fridatarget.LicenseManager");
+    LicenseManager["isLicenseStillValid"].implementation = function (context, unixTimestamp) {
+    console.log(`LicenseManager.isLicenseStillValid is called: context=${context}, unixTimestamp=${unixTimestamp}`);
+    return this["isLicenseStillValid"](context, 1672531260);
+    };
+})
+
+console.log("License Check Bypass #2 Script Loaded.")
+```
+
+## The Dice Game
+
