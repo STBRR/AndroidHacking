@@ -1,7 +1,8 @@
 Java.perform(() => {
     let DiceGameFragment = Java.use("io.hextree.fridatarget.ui.DiceGameFragment");
     DiceGameFragment["randomDice"].implementation = function() {
-        this["randomDice"]();
+        let result = this["randomDice"]();
+        console.log(`randomDice() has been called with ${result}. Overwritting return value`)
         return 5;
     };
 })

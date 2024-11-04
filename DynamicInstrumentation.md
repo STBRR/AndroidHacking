@@ -531,7 +531,7 @@ We can use `frida-trace` along with a frida script to overwrite the return value
             Log.d("DiceGameFragment", "You won!");
             ((TextView) getView().findViewById(R.id.text_dice_winning_status)).setText("You won!");
             ((TextView) getView().findViewById(R.id.text_dice_winning_status)).setTextColor(Color.rgb(0, 255, 0));
-            ((TextView) getView().findViewById(R.id.text_dice_flag)).setText(FlagCryptor.decodeFlag("VUtHe3NldnFuLWVieXl2YXQtZ3VyLXF2cHJ9"));
+            ((TextView) getView().findViewById(R.id.text_dice_flag)).setText(FlagCryptor.decodeFlag("REDACTED"));
             return;
         }
         Log.d("DiceGameFragment", "You lost!!");
