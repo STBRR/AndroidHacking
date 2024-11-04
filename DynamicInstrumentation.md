@@ -297,14 +297,13 @@ Third Flag: HXT{REDACTED}
 ## Tracing Activites
 
 It can be helpful during the research process to understand exactly which activity we are interacting with.
-Frida can be used to 'hook' into the `android.app.Activity' class to output which activity we are currently using.
+Frida can be used to 'hook' into the `android.app.Activity` class to output which activity we are currently using.
 
 ```javascript
 Java.perform(() => {
     let ActivityClass = Java.use("android.app.Activity");
     ActivityClass.onResume.implementation = function() {
         console.log("Activity resumed:", this.getClass().getName());
-        // Call original onResume method
         this.onResume();
     }
 })
@@ -314,3 +313,19 @@ This code snipped will overwrite the `onResume` implementation within the `andro
 then return to the original `onResume` with `this.onResume()` 
 
 We notice when we click around that our script does not update but only shows 'MainActivity'.
+This is because we need to trace the fragments that are in our application.
+
+A fragment by definition is a reusable portion of your app's UI so when we are navigating around it can
+be helpful to trace these calls to.
+
+```javascript
+Java.perform(() => {
+    let FragmentClass = Java.use("androidx.fragment.app.Fragment");
+    FragmentClass.onStart.implementation = function() {
+        console.log("[*] Fragment Started:", this.getClass().getName());
+        this.onStart();
+    }
+})
+```
+
+Here we override the implementation of the `Fragment.onStart()` method to console. 
