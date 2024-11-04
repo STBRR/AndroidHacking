@@ -294,4 +294,23 @@ Third Flag: HXT{REDACTED}
 [Pixel 4 XL::FridaTarget ]->
 ```
 
+## Tracing Activites
 
+It can be helpful during the research process to understand exactly which activity we are interacting with.
+Frida can be used to 'hook' into the `android.app.Activity' class to output which activity we are currently using.
+
+```javascript
+Java.perform(() => {
+    let ActivityClass = Java.use("android.app.Activity");
+    ActivityClass.onResume.implementation = function() {
+        console.log("Activity resumed:", this.getClass().getName());
+        // Call original onResume method
+        this.onResume();
+    }
+})
+```
+
+This code snipped will overwrite the `onResume` implementation within the `android.app.Activity` class and log the current name of the activity to the console
+then return to the original `onResume` with `this.onResume()` 
+
+We notice when we click around that our script does not update but only shows 'MainActivity'.
