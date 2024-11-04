@@ -560,3 +560,7 @@ console.log("Roll Dice Bypass Script has been loaded.")
 # SSL Validation Bypasses
 
 ## SSLContext & Network-Security-Config Bypass
+
+- With Frida we can disable SSL validation or disable SSL pinning. For example to bypass Network Security Config and SSLContext based on cerficiate pinning.
+
+The way we can bypass SSL pinning in Android all depends on how it is implemented.
