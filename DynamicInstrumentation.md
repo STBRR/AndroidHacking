@@ -72,6 +72,9 @@ _Be sure to download the version of Frida Server that matches the same version i
 
 # The Frida REPL & Frida Scripts
 
+
+## The Frida REPL
+
 The Frida REPL (Read-Eval-Print-Loop) is a JavaScript interpreter, and so we can directly run JavaScript statements.
 
 ```javascript
@@ -88,3 +91,42 @@ for(var=0; i<5; i++) {\
 
 The full JavaScript API documentation for Frida can be found [here](https://frida.re/docs/examples/javascript/)
 
+## Writing Frida Scripts
+
+Most of the time rather than using the REPL. We'll write Frida scripts that are regular JavaScript files that we can load into Frida to help automate tasks.
+
+Scripts can be loaded into Frida with: `frida -U -l script.js <ApplicationName>` but we can also enable/disable auto-reloading on the CLI with `%autoreload on/off`
+to manually reload all scripts we can run `%reload` in the REPL.
+
+The following script will parse the current android version on the device and display some output if the `androidVersion` is larger than 10.
+
+```javascript
+console.log("Hello from the script");
+
+var androidVersion = parseInt(Java.androidVersion)
+
+if(androidVersion > 10) {
+        console.log("You're running a version that is newer than 10");
+} else {
+        console.log("You're running an older version version of Android");
+}
+```
+
+```
+$ frida -U -l frida-scripts/hello.js FridaTarget
+     ____
+    / _  |   Frida 16.4.10 - A world-class dynamic instrumentation toolkit
+   | (_| |
+    > _  |   Commands:
+   /_/ |_|       help      -> Displays the help system
+   . . . .       object?   -> Display information about 'object'
+   . . . .       exit/quit -> Exit
+   . . . .
+   . . . .   More info at https://frida.re/docs/home/
+   . . . .
+   . . . .   Connected to Pixel 4 XL (id=99061FFBA00CJ9)
+Attaching...
+Hello from the script
+You're running a version that is newer than 10
+[Pixel 4 XL::FridaTarget ]->
+```
