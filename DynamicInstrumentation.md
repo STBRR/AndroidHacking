@@ -507,3 +507,56 @@ console.log("License Check Bypass #2 Script Loaded.")
 
 ## The Dice Game
 
+In order for us to win the game we need to roll 5 sixes. Given what we know. 
+We can use `frida-trace` along with a frida script to overwrite the return value for the `randomDice()` method.
+
+```java
+    public int randomDice() {
+        Random random = new Random();
+        int randomNumber = random.nextInt(6);
+        return randomNumber;
+    }
+
+    public void rollDice() {
+        boolean won = true;
+        for (int i = 0; i < 5; i++) {
+            TextView v = (TextView) getView().findViewById(this.diceViewMapping[i]);
+            int dice = randomDice();
+            if (dice != 5) {
+                won = false;
+            }
+            v.setText(this.diceMapping[dice]);
+        }
+        if (won) {
+            Log.d("DiceGameFragment", "You won!");
+            ((TextView) getView().findViewById(R.id.text_dice_winning_status)).setText("You won!");
+            ((TextView) getView().findViewById(R.id.text_dice_winning_status)).setTextColor(Color.rgb(0, 255, 0));
+            ((TextView) getView().findViewById(R.id.text_dice_flag)).setText(FlagCryptor.decodeFlag("VUtHe3NldnFuLWVieXl2YXQtZ3VyLXF2cHJ9"));
+            return;
+        }
+        Log.d("DiceGameFragment", "You lost!!");
+        ((TextView) getView().findViewById(R.id.text_dice_winning_status)).setText("You lost!");
+        ((TextView) getView().findViewById(R.id.text_dice_winning_status)).setTextColor(Color.rgb(255, 0, 0));
+        ((TextView) getView().findViewById(R.id.text_dice_flag)).setText(HttpUrl.FRAGMENT_ENCODE_SET);
+    }
+```
+
+As `randomDice()` returns a random number. It is trivial to bypass by right clicking the method in `jadx-gui`
+and copying as a Frida snippet as seen below. We can modify the implementation and ensure that we will roll
+5 sixes.
+
+```javascript
+Java.perform(() => {
+    let DiceGameFragment = Java.use("io.hextree.fridatarget.ui.DiceGameFragment");
+    DiceGameFragment["randomDice"].implementation = function() {
+        this["randomDice"]();
+        return 5;
+    };
+})
+
+console.log("Roll Dice Bypass Script has been loaded.")
+```
+
+# SSL Validation Bypasses
+
+## SSLContext & Network-Security-Config Bypass
