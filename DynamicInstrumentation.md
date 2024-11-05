@@ -563,4 +563,115 @@ console.log("Roll Dice Bypass Script has been loaded.")
 
 - With Frida we can disable SSL validation or disable SSL pinning. For example to bypass Network Security Config and SSLContext based on cerficiate pinning.
 
-The way we can bypass SSL pinning in Android all depends on how it is implemented.
+The way we can bypass SSL validation and certificate pinning in Android all depends on how it is implemented. This can be as trivial as modifying the implementation of the method and therefore just disabling it.
+
+Within Android Applications it is common to see the application using `X509TrustManager` for validation SSL certificates.
+
+The demo [application](https://storage.googleapis.com/hextree_prod_image_uploads/media/uploads/android-dynamic-instrumentation/FridaTarget.apk) that we've been provided has 3 small challenges for us to tackle that surround bypassing SSL Validation and Certificate Pinning.
+
+If we are able to bypassthe SSL validation. The buttons that we press will turn 'Green' to indiciate we have bypassed any validations.
+
+`frida-trace` can be used to check for `checkServerTrust` calls that we can follow to understand what is happening under the hood when we tap the button 
+'SSLContext Pinning'
+
+
+```
+$ frida-trace -U -j '*!*checkServerTrusted*' FridaTarget
+Instrumenting...
+... 
+3801 ms  Platform.checkServerTrusted("<instance: javax.net.ssl.X509TrustManager, $className: com.android.org.conscrypt.ConscryptEngineSocket$2>", ["<instance: java.security.cert.X509Certificate, $className: com.android.org.conscrypt.OpenSSLX509Certificate>","<instance: java.security.cert.X509Certificate, $className: com.android.org.conscrypt.OpenSSLX509Certificate>","<instance: java.security.cert.X509Certificate, $className: com.android.org.conscrypt.OpenSSLX509Certificate>"], "GENERIC", "<instance: com.android.org.conscrypt.ConscryptEngine>")
+```
+
+We can see that `Platform.checkServerTrusted` is being called but we are not able to see a package name in order for us to use this within a Frida script.
+The Frida REPL can be used to use `Java.enumerateMethods()` directory or we can write a small Frida script. The choice is yours.
+
+```javascript
+let methods = Java.enumerateMethods("*Platform!*checkServerTrusted*");
+console.log(JSON.stringify(methods, null, 2));
+```
+
+Yes! - We have obtained the full package name for the method that gets called within the application.
+
+```json
+[
+  {
+    "loader": null,
+    "classes": [
+      {
+        "name": "com.android.org.conscrypt.Platform",
+        "methods": [
+          "checkServerTrusted"
+        ]
+      }
+    ]
+  }
+]
+```
+
+The final step for bypassing the SSLContext validation is to override the implementation of this function.
+
+```javascript
+Java.perform(() => {
+    var PlatformClass = Java.use("com.android.org.conscrypt.Platform");
+    PlatformClass.checkServerTrusted.overload('javax.net.ssl.X509TrustManager', '[Ljava.security.cert.X509Certificate;', 'java.lang.String', 'com.android.org.conscrypt.ConscryptEngine').implementation = function() {
+        console.log("checkServerTrusted has been called. - bypassing!")
+    }
+})
+
+console.log("SSL Pinning Script has been loaded")
+```
+
+## OKHTTP3 Bypass
+
+Similar to the previous section. We can use `frida-trace` to trace the function calls and override the implementation of `okhttp3.OkHttpClient$Builder`
+
+```javascript
+Java.perform(() => {
+    var BuilderClass = Java.use("okhttp3.OkHttpClient$Builder");
+    BuilderClass.certificatePinner.implementation = function() {
+        console.log("Certificate pinner called");
+        return this;
+    }
+})
+```
+
+## Bypassing SSL Pinning with Objection
+
+Objection makes bypassing SSL pinning very simple with a simple command.
+
+We can load up `objection` with 
+
+```
+$ objection --gadget io.hextree.fridatarget explore
+Using USB device `Android Emulator 5554`
+Agent injected and responds ok!
+
+     _   _         _   _
+ ___| |_|_|___ ___| |_|_|___ ___
+| . | . | | -_|  _|  _| | . |   |
+|___|___| |___|___|_| |_|___|_|_|
+      |___|(object)inject(ion) v1.11.0
+
+     Runtime Mobile Exploration
+        by: @leonjza from @sensepost
+
+[tab] for command suggestions
+io.hextree.fridatarget on (google: 13) [usb] #
+```
+
+By using the command `android sslpinning disable` we can automatically override the return value for common methods use for SSL pinning and validation.
+
+```
+io.hextree.fridatarget on (google: 13) [usb] # android sslpinning disable
+(agent) Custom TrustManager ready, overriding SSLContext.init()
+(agent) Found okhttp3.CertificatePinner, overriding CertificatePinner.check()
+(agent) Found okhttp3.CertificatePinner, overriding CertificatePinner.check$okhttp()
+(agent) Found com.android.org.conscrypt.TrustManagerImpl, overriding TrustManagerImpl.verifyChain()
+(agent) Found com.android.org.conscrypt.TrustManagerImpl, overriding TrustManagerImpl.checkTrustedRecursive()
+(agent) Registering job 545414. Type: android-sslpinning-disable
+io.hextree.fridatarget on (google: 13) [usb] # (agent) [545414] Called SSLContext.init(), overriding TrustManager with empty one.
+(agent) [545414] Called (Android 7+) TrustManagerImpl.checkTrustedRecursive(), not throwing an exception.
+(agent) [545414] Called SSLContext.init(), overriding TrustManager with empty one.
+(agent) [545414] Called (Android 7+) TrustManagerImpl.checkTrustedRecursive(), not throwing an exception.
+(agent) [545414] Called SSLContext.init(), overriding TrustManager with empty one.
+```
