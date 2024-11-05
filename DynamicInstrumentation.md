@@ -675,3 +675,49 @@ io.hextree.fridatarget on (google: 13) [usb] # (agent) [545414] Called SSLContex
 (agent) [545414] Called (Android 7+) TrustManagerImpl.checkTrustedRecursive(), not throwing an exception.
 (agent) [545414] Called SSLContext.init(), overriding TrustManager with empty one.
 ```
+
+# 2048
+
+For this exercise we will target a simple '2048' game. The objective of this game is to slide tiles that are the same value in order to reach
+the next value. 2,4,8,16,32,64 etc.. until we combine two 1024 tiles.
+
+Our objective is to beat the game by using some Frida wizardy. The first step for this is to patch our APK with `objection`
+
+_Note: This will not need to be done if you're running `frida-server` on the device or if the device is rooted; `magisk_frida`_
+
+```
+$ frida-trace -U -j 'io.hextree.*!*' HT2048
+ ...
+ 20128 ms     |    |    | GameActivity.addNumber() 
+ 20128 ms     |    |    |    | GameActivity.generateNumber()                                                                                                 20128 ms     |    |    |    | <= 2                                      
+ 20128 ms     |    |    |    | Element.setNumber(2)                                                             
+ 20128 ms     |    |    |    | Element.drawItem()   
+```
+
+We can see that the function `GameActivity.generateNumber()` is called when a new number shows on the screen for us to double.
+
+Let's review this function within `jadx-gui` and see how this is implemented and how we can bypass it with a Frida script.
+
+```java
+    public int generateNumber() {
+        if (Math.random() <= 0.9d) {
+            return 2;
+        }
+        return 4;
+    }
+```
+
+The `generateNumber()` method will generate a number and if the number is less than `0.9` then the function will return 2 if not. It'll return 4.
+Let's write a Frida script and modify this return value to return `1024` to the game and obtain the flag by combining two `1024` blocks to obtain a `2048` block.
+
+```javascript
+Java.perform(() => {
+    let GameActivity = Java.use("io.hextree.privacyfriendly2048.activities.GameActivity");
+    GameActivity.generateNumber.implementation = function(){
+        console.log('generateNumber is called');
+        let ret = this.generateNumber();
+        console.log('generateNumber ret value is ' + ret);
+        return 1024;
+    };
+})
+```
